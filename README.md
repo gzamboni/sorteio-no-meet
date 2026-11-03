@@ -14,7 +14,7 @@ Abas do Meet já abertas precisam ser recarregadas uma vez.
 
 ## Uso
 
-1. Entre numa reunião. Clique no 🎲 (lado esquerdo da tela) ou no ícone da extensão → **Abrir painel na reunião**.
+1. Entre numa reunião. Clique no 🎲 (canto superior direito) ou no ícone da extensão → **Abrir painel na reunião**.
 2. **Sortear participante**. Opções: excluir a mim, não repetir sorteados, efeitos sonoros (off por padrão).
 3. Histórico da sessão fica só em memória (some ao recarregar a aba). Botão "limpar" apaga.
 

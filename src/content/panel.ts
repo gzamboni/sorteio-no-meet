@@ -5,6 +5,7 @@ import type { Participant, Snapshot } from '../lib/participants';
 
 const STATUS_MSG: Record<string, string> = {
   'not-meeting': 'Entre em uma reunião do Meet para sortear.',
+  lobby: 'Entre na reunião para sortear.',
   loading: 'Carregando a reunião…',
   unreadable:
     'Não consegui ler os participantes. Entre na reunião ou abra a lista "Pessoas"; se persistir, a interface do Meet pode ter mudado.',
@@ -134,11 +135,14 @@ export function createPanel() {
     render();
   };
 
+  // 🎲 only while a call is open (participants readable) and the panel is closed
+  let inCall = false;
+  const syncFab = () => (fab.hidden = !inCall || !panel.hidden);
   const show = (open: boolean) => {
     panel.hidden = !open;
-    fab.hidden = open;
+    syncFab();
     if (open) go.focus();
-    else fab.focus();
+    else if (!fab.hidden) fab.focus();
   };
   // Document Picture-in-Picture (Chrome 116+): same DOM + JS state, moved to a floating window.
   let pip: Window | null = null;
@@ -157,7 +161,6 @@ export function createPanel() {
       host.style.display = 'block';
       $('.root').classList.add('pip');
       show(true);
-      fab.hidden = true;
       w.document.body.append(host);
       w.addEventListener('pagehide', () => {
         pip = null;
@@ -188,6 +191,9 @@ export function createPanel() {
     open: () => show(true),
     update(s: Snapshot) {
       snap = s;
+      inCall = s.status === 'ready';
+      if (!inCall && !pip) panel.hidden = true; // call ended / left
+      syncFab();
       render();
     },
   };

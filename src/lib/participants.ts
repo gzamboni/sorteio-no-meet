@@ -1,6 +1,6 @@
 export type Participant = { id: string; name: string; isSelf: boolean };
 export type Source = 'panel' | 'tiles' | 'none';
-export type Status = 'not-meeting' | 'loading' | 'unreadable' | 'ready';
+export type Status = 'not-meeting' | 'lobby' | 'loading' | 'unreadable' | 'ready';
 export type Snapshot = { status: Status; source: Source; participants: Participant[] };
 
 // Icon-font glyphs ("mic_off", "more_vert") are text nodes too; skip them.
@@ -70,6 +70,17 @@ export function readParticipants(root: ParentNode): { source: Source; participan
   return { source: 'none', participants: [] };
 }
 
+const LEAVE_LABEL = /sair da chamada|leave call|salir de la llamada|quitter l'appel|anruf verlassen/i;
+
+/** Leave-call button exists only after joining; the lobby preview has none. */
+export function isInCall(root: ParentNode): boolean {
+  for (const b of root.querySelectorAll('button')) {
+    if (LEAVE_LABEL.test(b.getAttribute('aria-label') ?? '')) return true;
+    if ([...b.querySelectorAll('*')].some((n) => !n.children.length && n.textContent?.trim() === 'call_end')) return true;
+  }
+  return false;
+}
+
 // Real URLs seen: /abc-defg-hij and /meet/abc-defg-hij
 const MEET_PATH = /^(\/meet)?\/[a-z]{3,4}-[a-z]{4}-[a-z]{3,4}\/?$/i;
 export const isMeetingPath = (path: string) => MEET_PATH.test(path);
@@ -83,5 +94,5 @@ export function snapshot(root: ParentNode, path: string, sinceStartMs: number): 
   if (source === 'none') {
     return { status: sinceStartMs < LOADING_MS ? 'loading' : 'unreadable', source, participants };
   }
-  return { status: 'ready', source, participants };
+  return { status: isInCall(root) ? 'ready' : 'lobby', source, participants };
 }

@@ -52,8 +52,14 @@ describe('snapshot', () => {
     expect(snapshot(document, '/abc-defg-hij', 1000).status).toBe('loading');
     expect(snapshot(document, '/abc-defg-hij', 60_000).status).toBe('unreadable');
   });
-  it('ready with participants', () => {
+  it('lobby: self preview tile but no leave button', () => {
     document.body.innerHTML = tilesHtml;
+    expect(snapshot(document, '/abc-defg-hij', 0).status).toBe('lobby');
+  });
+  it('ready once leave button exists (icon or label)', () => {
+    document.body.innerHTML = tilesHtml + '<button><i class="google-symbols">call_end</i></button>';
+    expect(snapshot(document, '/abc-defg-hij', 0).status).toBe('ready');
+    document.body.innerHTML = tilesHtml + '<button aria-label="Sair da chamada"></button>';
     expect(snapshot(document, '/abc-defg-hij', 0).status).toBe('ready');
   });
   it('meeting path matching', () => {

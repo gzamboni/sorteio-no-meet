@@ -3,6 +3,7 @@ const openBtn = document.getElementById('open') as HTMLButtonElement;
 
 const TEXT: Record<string, string> = {
   'not-meeting': 'Você está no Meet, mas fora de uma reunião.',
+  lobby: 'Você ainda não entrou na reunião.',
   loading: 'Reunião carregando…',
   unreadable: 'Não foi possível ler os participantes. Entre na reunião ou abra a lista "Pessoas".',
 };
