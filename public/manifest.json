@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Sorteio no Meet",
+  "version": "0.1.0",
+  "description": "Sorteia aleatoriamente um participante da reunião do Google Meet. Tudo local, sem servidores externos.",
+  "action": { "default_popup": "popup.html", "default_title": "Sorteio no Meet" },
+  "content_scripts": [
+    {
+      "matches": ["https://meet.google.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "permissions": []
+}
