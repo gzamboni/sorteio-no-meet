@@ -30,8 +30,8 @@ export async function spin(
   }
 }
 
-export function confetti(host: ShadowRoot): void {
-  const win = host.ownerDocument.defaultView ?? window; // may be the PiP window
+export function confetti(host: HTMLElement): void {
+  const win = host.ownerDocument.defaultView ?? window;
   const cv = host.ownerDocument.createElement('canvas');
   cv.className = 'confetti';
   cv.width = win.innerWidth;

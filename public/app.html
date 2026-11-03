@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sorteio no Meet</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <main>
+    <h1>🎲 Sorteio</h1>
+    <p class="status" role="status"></p>
+    <div class="stage" aria-live="polite">Pronto para sortear</div>
+    <p class="note" hidden></p>
+    <button class="go">Sortear participante</button>
+    <button class="reset link" title="Esquece quem já foi sorteado e limpa o resultado">Resetar sorteio</button>
+    <fieldset>
+      <label><input type="checkbox" class="o-rep"> Não repetir sorteados</label>
+      <label><input type="checkbox" class="o-snd"> Efeitos sonoros</label>
+    </fieldset>
+    <div><h3>Participantes <small>(desmarque para tirar do sorteio)</small></h3><ul class="chips"></ul></div>
+    <div class="histbox" hidden>
+      <h3>Histórico <button class="link clear">limpar</button></h3>
+      <ul class="hist"></ul>
+    </div>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

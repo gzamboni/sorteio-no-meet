@@ -14,26 +14,25 @@ Abas do Meet já abertas precisam ser recarregadas uma vez.
 
 ## Uso
 
-1. Entre numa reunião. Clique no 🎲 (canto superior direito) ou no ícone da extensão → **Abrir painel na reunião**.
-2. **Sortear participante**. Opções: excluir a mim, não repetir sorteados, efeitos sonoros (off por padrão).
-3. Histórico da sessão fica só em memória (some ao recarregar a aba). Botão "limpar" apaga.
+1. Entre numa reunião e clique no ícone da extensão na barra do Chrome. Abre uma **janela própria** (fora da aba do Meet), que você move para onde não cubra as câmeras. Clicar de novo foca a janela já aberta.
+2. **Sortear participante**. Opções: não repetir sorteados, efeitos sonoros (off por padrão). Na lista **Participantes**, desmarque quem não deve entrar no sorteio. **Resetar sorteio** esquece quem já foi sorteado.
+3. Histórico da sessão fica só em memória (some ao fechar a janela). Botão "limpar" apaga.
 
-Minimizar (–), fechar (✕) ou `Esc` fecham o painel sem recarregar o Meet.
+A janela está ligada à aba em que você clicou. Se recarregar essa aba, feche e reabra a janela.
 
 ## Desenvolvimento
 
 `npm test` (Vitest + happy-dom) · `npm run typecheck` · `npm run watch`
 
-Estrutura: `src/lib/draw.ts` (sorteio, sem UI) · `src/lib/participants.ts` (leitura do DOM) · `src/lib/animation.ts` (só apresentação; recebe o vencedor já escolhido) · `src/content/` (painel em Shadow DOM) · `src/popup/`.
+Estrutura: `src/background.ts` (ícone → abre janela) · `src/app/` (UI da janela) · `src/lib/draw.ts` (sorteio, sem UI) · `src/lib/participants.ts` (leitura do DOM) · `src/lib/animation.ts` (só apresentação; recebe o vencedor já escolhido) · `src/content/` (só lê participantes e responde à janela).
 
 ## Permissões
 
 | Item | Motivo |
 |---|---|
-| content script em `https://meet.google.com/*` | ler participantes e exibir o painel |
-| `permissions: []` | popup fala com a aba ativa via `tabs.sendMessage`; não precisa de `tabs`/`activeTab` |
-
-Sem service worker: nada a coordenar, evita o problema de suspensão do MV3.
+| content script em `https://meet.google.com/*` | ler os participantes da página |
+| `permissions: []` | a janela fala com a aba via `tabs.sendMessage`; não precisa de `tabs`/`activeTab` |
+| service worker | só abre/foca a janela ao clicar no ícone; sem estado, pode ser suspenso |
 
 ## Como a identificação de participantes funciona
 
@@ -48,7 +47,7 @@ Duplicatas: por `data-participant-id` (mesmo nome com ids diferentes = pessoas d
 ### Limitações conhecidas
 
 - **Seletores não validados em reunião real nesta versão.** Foram escritos a partir de conhecimento da estrutura do Meet e testados só contra fixtures. Antes de usar, valide numa reunião real (critérios 4 e 5 da spec). Se falhar, ajuste `src/lib/participants.ts` e as fixtures em `participants.test.ts`.
-- Pelos tiles, só entram participantes renderizados (o Meet pagina a grade em reuniões grandes). Abra "Pessoas" para a lista completa; o painel avisa quando usa o fallback.
+- Pelos tiles, só entram participantes renderizados (o Meet pagina a grade em reuniões grandes). Abra "Pessoas" para a lista completa; a janela avisa quando usa o fallback.
 - Heurística de nome nos tiles pode pegar rótulos extras (ex.: "Fixado") se o Meet mudar a estrutura.
 - Apresentações de tela podem aparecer como tile separado.
 - Reconhecimento do "(Você)" cobre pt, en, es, fr, de.
