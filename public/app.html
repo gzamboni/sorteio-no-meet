@@ -15,10 +15,11 @@
     <button class="go">Sortear participante</button>
     <button class="reset link" title="Esquece quem já foi sorteado e limpa o resultado">Resetar sorteio</button>
     <fieldset>
-      <label><input type="checkbox" class="o-rep"> Não repetir sorteados</label>
       <label><input type="checkbox" class="o-snd"> Efeitos sonoros</label>
     </fieldset>
-    <div><h3>Participantes <small>(desmarque para tirar do sorteio)</small></h3><ul class="chips"></ul></div>
+    <div><h3>Não sorteados <small>(desmarque para tirar do sorteio)</small></h3><ul class="chips l-pool"></ul></div>
+    <div><h3>Já sorteados</h3><ul class="chips l-done"></ul></div>
+    <div><h3>Desmarcados</h3><ul class="chips l-off"></ul></div>
     <div class="histbox" hidden>
       <h3>Histórico <button class="link clear">limpar</button></h3>
       <ul class="hist"></ul>

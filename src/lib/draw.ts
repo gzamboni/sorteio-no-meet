@@ -1,6 +1,5 @@
 import type { Participant } from './participants';
 
-export type Options = { noRepeat: boolean };
 export type HistoryEntry = { n: number; name: string; time: Date };
 
 type Fill = (buf: Uint32Array) => unknown;
@@ -15,13 +14,13 @@ export function randomIndex(n: number, fill: Fill = (b) => crypto.getRandomValue
   return buf[0] % n;
 }
 
+/** drawn/excluded hold names, not ids: Meet issues a new id when someone rejoins. */
 export function eligible(
   ps: Participant[],
-  opts: Options,
   drawn: ReadonlySet<string>,
   excluded: ReadonlySet<string> = new Set(),
 ): Participant[] {
-  return ps.filter((p) => !excluded.has(p.id) && !(opts.noRepeat && drawn.has(p.id)));
+  return ps.filter((p) => !excluded.has(p.key) && !drawn.has(p.key));
 }
 
 export function pick<T>(pool: readonly T[], fill?: Fill): T {

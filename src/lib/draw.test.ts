@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { eligible, pick, randomIndex } from './draw';
 
-const P = (id: string, isSelf = false) => ({ id, name: id, isSelf });
+const P = (id: string, isSelf = false) => ({ id, name: id, isSelf, key: id });
 const people = [P('a'), P('b', true), P('c')];
 
 describe('randomIndex', () => {
@@ -27,21 +27,21 @@ describe('randomIndex', () => {
 
 describe('eligible', () => {
   it('includes everyone by default', () => {
-    expect(eligible(people, { noRepeat: false }, new Set())).toHaveLength(3);
+    expect(eligible(people, new Set())).toHaveLength(3);
   });
-  it('excludes drawn only when noRepeat', () => {
-    const drawn = new Set(['a']);
-    expect(eligible(people, { noRepeat: true }, drawn).map((p) => p.id)).toEqual(['b', 'c']);
-    expect(eligible(people, { noRepeat: false }, drawn)).toHaveLength(3);
+  it('excludes drawn', () => {
+    expect(eligible(people, new Set(['a'])).map((p) => p.id)).toEqual(['b', 'c']);
   });
-  it('manually excluded ids never qualify', () => {
-    const o = { noRepeat: false };
-    expect(eligible(people, o, new Set(), new Set(['a', 'c'])).map((p) => p.id)).toEqual(['b']);
+  it('manually excluded never qualify', () => {
+    expect(eligible(people, new Set(), new Set(['a', 'c'])).map((p) => p.id)).toEqual(['b']);
   });
   it('can end empty', () => {
-    expect(eligible(people, { noRepeat: true }, new Set(['a', 'b', 'c']))).toEqual([]);
+    expect(eligible(people, new Set(['a', 'b', 'c']))).toEqual([]);
   });
   it('drawn participant who left is ignored', () => {
-    expect(eligible(people, { noRepeat: true }, new Set(['gone']))).toHaveLength(3);
+    expect(eligible(people, new Set(['gone']))).toHaveLength(3);
+  });
+  it('matches by key, so a rejoin with a new id stays drawn', () => {
+    expect(eligible([{ id: 'new', name: 'a', isSelf: false, key: 'a' }], new Set(['a']))).toEqual([]);
   });
 });

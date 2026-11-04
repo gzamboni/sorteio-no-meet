@@ -15,7 +15,7 @@ Abas do Meet já abertas precisam ser recarregadas uma vez.
 ## Uso
 
 1. Entre numa reunião e clique no ícone da extensão na barra do Chrome. Abre uma **janela própria** (fora da aba do Meet), que você move para onde não cubra as câmeras. Clicar de novo foca a janela já aberta.
-2. **Sortear participante**. Opções: não repetir sorteados, efeitos sonoros (off por padrão). Na lista **Participantes**, desmarque quem não deve entrar no sorteio. **Resetar sorteio** esquece quem já foi sorteado.
+2. **Sortear participante**. Cada pessoa é sorteada uma vez só (identificada pelo nome, então sair e voltar não a reabilita). Três listas: **Não sorteados** (o sorteio sai daqui), **Já sorteados** e **Desmarcados** (desmarque para tirar do sorteio). Efeitos sonoros: off por padrão. **Resetar sorteio** devolve todos os sorteados para a primeira lista.
 3. Histórico da sessão fica só em memória (some ao fechar a janela). Botão "limpar" apaga.
 
 A janela está ligada à aba em que você clicou. Se recarregar essa aba, feche e reabra a janela.

@@ -1,6 +1,6 @@
 import { beep, confetti, prefersReducedMotion, spin } from '../lib/animation';
-import { eligible, pick, type HistoryEntry, type Options } from '../lib/draw';
-import type { Snapshot } from '../lib/participants';
+import { eligible, pick, type HistoryEntry } from '../lib/draw';
+import type { Participant, Snapshot } from '../lib/participants';
 
 const STATUS_MSG: Record<string, string> = {
   'not-meeting': 'Esta aba do Meet não está em uma reunião.',
@@ -13,20 +13,21 @@ const OFFLINE_MSG =
   'Não consegui falar com a aba do Meet. Ela foi fechada ou precisa ser recarregada (F5). Depois, feche e reabra esta janela.';
 
 const $ = <T extends HTMLElement>(s: string) => document.querySelector<T>(s)!;
-const [status, stage, note, chips, histBox, hist] = ['.status', '.stage', '.note', '.chips', '.histbox', '.hist'].map((s) => $(s));
+const [status, stage, note, histBox, hist] = ['.status', '.stage', '.note', '.histbox', '.hist'].map((s) => $(s));
+const [lPool, lDone, lOff] = ['.l-pool', '.l-done', '.l-off'].map((s) => $(s));
 const [go, reset] = [$<HTMLButtonElement>('.go'), $<HTMLButtonElement>('.reset')];
-const [oRep, oSnd] = ['.o-rep', '.o-snd'].map((s) => $<HTMLInputElement>(s));
+const oSnd = $<HTMLInputElement>('.o-snd');
 
 const tabId = Number(new URLSearchParams(location.search).get('tab'));
 let snap: Snapshot = { status: 'loading', source: 'none', participants: [] };
 let offline = false;
 let busy = false;
-let chipsKey = '';
+let listsKey = '';
 let winner: { id: string; name: string } | null = null;
+// keyed by Participant.key: Meet gives a rejoining person a new id
 const drawn = new Set<string>();
 const excluded = new Set<string>(); // manually unchecked in the list
 const history: HistoryEntry[] = []; // in memory only, by design
-const opts = (): Options => ({ noRepeat: oRep.checked });
 
 function render() {
   const ready = !offline && snap.status === 'ready';
@@ -37,38 +38,43 @@ function render() {
         (snap.source === 'tiles' ? ' (só quem está visível na tela; abra "Pessoas" no Meet para a lista completa)' : '')
       : STATUS_MSG[snap.status];
   status.classList.toggle('err', offline || snap.status === 'unreadable');
-  const pool = ready ? eligible(snap.participants, opts(), drawn, excluded) : [];
+  const pool = ready ? eligible(snap.participants, drawn, excluded) : [];
   go.disabled = busy || !pool.length;
   reset.disabled = busy;
   go.textContent = winner ? 'Sortear novamente' : 'Sortear participante';
   if (ready && !pool.length && !busy) {
-    note.textContent = 'Nenhum participante elegível com as opções atuais.';
+    note.textContent = 'Ninguém sobrando para sortear. Resete o sorteio ou remarque alguém.';
     note.hidden = false;
   } else if (winner && !busy && ready && !snap.participants.some((p) => p.id === winner!.id)) {
     note.textContent = `${winner.name} saiu da reunião. Sorteie novamente se quiser.`;
     note.hidden = false;
   } else note.hidden = true;
   // rebuild only on change: polling every second must not steal keyboard focus
-  const key = snap.participants.map((p) => p.id + p.name + excluded.has(p.id)).join('|');
-  if (key !== chipsKey) {
-    chipsKey = key;
-    chips.replaceChildren(
-      ...snap.participants.map((p) => {
-        const li = document.createElement('li');
-        const label = document.createElement('label');
-        const cb = document.createElement('input');
-        cb.type = 'checkbox';
-        cb.checked = !excluded.has(p.id);
-        cb.onchange = () => {
-          if (cb.checked) excluded.delete(p.id);
-          else excluded.add(p.id);
-          render();
-        };
-        label.append(cb, p.name + (p.isSelf ? ' (você)' : ''));
-        li.append(label);
-        return li;
-      }),
-    );
+  const state = (p: Participant) => (excluded.has(p.key) ? 2 : drawn.has(p.key) ? 1 : 0);
+  const key = snap.participants.map((p) => p.id + p.key + state(p)).join('|');
+  if (key !== listsKey) {
+    listsKey = key;
+    for (const [i, ul] of [lPool, lDone, lOff].entries()) {
+      ul.replaceChildren(
+        ...snap.participants
+          .filter((p) => state(p) === i)
+          .map((p) => {
+            const li = document.createElement('li');
+            const label = document.createElement('label');
+            const cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.checked = i !== 2;
+            cb.onchange = () => {
+              if (cb.checked) excluded.delete(p.key);
+              else excluded.add(p.key);
+              render();
+            };
+            label.append(cb, p.name + (p.isSelf ? ' (você)' : ''));
+            li.append(label);
+            return li;
+          }),
+      );
+    }
   }
   histBox.hidden = !history.length;
   hist.replaceChildren(
@@ -86,7 +92,7 @@ function render() {
 }
 
 go.onclick = async () => {
-  const pool = eligible(snap.participants, opts(), drawn, excluded);
+  const pool = eligible(snap.participants, drawn, excluded);
   if (busy || !pool.length) return;
   const chosen = pick(pool); // decided before any animation
   busy = true;
@@ -100,7 +106,7 @@ go.onclick = async () => {
   });
   busy = false;
   winner = chosen;
-  drawn.add(chosen.id);
+  drawn.add(chosen.key);
   history.unshift({ n: history.length + 1, name: chosen.name, time: new Date() });
   stage.classList.add('win');
   if (!prefersReducedMotion()) {
@@ -123,7 +129,6 @@ $('.clear').onclick = () => {
   history.length = 0;
   render();
 };
-oRep.onchange = render;
 
 async function poll() {
   try {

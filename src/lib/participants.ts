@@ -1,4 +1,5 @@
-export type Participant = { id: string; name: string; isSelf: boolean };
+/** key: stable across rejoin (Meet reissues `id`): name + avatar URL without its size suffix. */
+export type Participant = { id: string; name: string; isSelf: boolean; key: string };
 export type Source = 'panel' | 'tiles' | 'none';
 export type Status = 'not-meeting' | 'lobby' | 'loading' | 'unreadable' | 'ready';
 export type Snapshot = { status: Status; source: Source; participants: Participant[] };
@@ -18,11 +19,13 @@ function leafText(el: Element): string {
   return '';
 }
 
-function make(rawName: string, id: string | null, isSelfHint: boolean): Participant | null {
+const avatarOf = (el: Element) => el.querySelector('img[src*="googleusercontent"]')?.getAttribute('src')?.split('=')[0] ?? '';
+
+function make(rawName: string, id: string | null, isSelfHint: boolean, el: Element): Participant | null {
   const isSelf = isSelfHint || SELF_SUFFIX.test(rawName);
   const name = rawName.replace(SELF_SUFFIX, '').trim();
   if (!name) return null;
-  return { id: id || `n:${name}`, name, isSelf };
+  return { id: id || `n:${name}`, name, isSelf, key: name + '|' + avatarOf(el) };
 }
 
 function fromPanel(root: ParentNode): Participant[] {
@@ -31,7 +34,7 @@ function fromPanel(root: ParentNode): Participant[] {
     if (!PANEL_LABEL.test(list.getAttribute('aria-label') ?? '')) continue;
     for (const item of list.querySelectorAll('[role="listitem"]')) {
       const raw = item.getAttribute('aria-label')?.trim() || leafText(item);
-      const p = make(raw, item.getAttribute('data-participant-id'), false);
+      const p = make(raw, item.getAttribute('data-participant-id'), false, item);
       if (p) out.push(p);
     }
   }
@@ -46,7 +49,7 @@ function fromTiles(root: ParentNode): Participant[] {
     const raw = selfEl
       ? selfEl.textContent?.trim() || selfEl.getAttribute('data-self-name') || ''
       : leafText(tile);
-    const p = make(raw, tile.getAttribute('data-participant-id'), !!selfEl);
+    const p = make(raw, tile.getAttribute('data-participant-id'), !!selfEl, tile);
     if (p) out.push(p);
   }
   return out;
