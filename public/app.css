@@ -38,6 +38,11 @@ button { font: inherit; color: inherit; cursor: pointer; }
 @keyframes glow { from { box-shadow: 0 0 0 4px var(--accent), 0 0 12px 4px #ffc107; } to { box-shadow: 0 0 0 6px #ffc107, 0 0 32px 12px #ffc107; } }
 .stage.win .tick { animation: pop .5s cubic-bezier(.2, 1.6, .4, 1); }
 @keyframes pop { from { transform: scale(.4); opacity: 0; } }
+.timer { margin: 0; text-align: center; font-size: 32px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.timer.low { color: var(--err); }
+.row { display: flex; gap: 12px; align-items: center; }
+.hms { display: flex; align-items: center; gap: 2px; font-variant-numeric: tabular-nums; }
+.hms input { width: 3.2em; font: inherit; text-align: center; }
 .note { margin: 0; font-size: 13px; color: var(--err); }
 
 .go {

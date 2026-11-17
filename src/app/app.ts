@@ -1,4 +1,4 @@
-import { beep, confetti, prefersReducedMotion, spin } from '../lib/animation';
+import { alarm, beep, confetti, prefersReducedMotion, spin } from '../lib/animation';
 import { eligible, pick, type HistoryEntry } from '../lib/draw';
 import type { Participant, Snapshot } from '../lib/participants';
 
@@ -17,6 +17,9 @@ const [status, stage, note, histBox, hist] = ['.status', '.stage', '.note', '.hi
 const [lPool, lDone, lOff] = ['.l-pool', '.l-done', '.l-off'].map((s) => $(s));
 const [go, reset] = [$<HTMLButtonElement>('.go'), $<HTMLButtonElement>('.reset')];
 const oSnd = $<HTMLInputElement>('.o-snd');
+const oTimer = $<HTMLInputElement>('.o-timer');
+const hms = [...document.querySelectorAll<HTMLInputElement>('.hms input')]; // HH, MM, SS
+const [timerBox, tLeft] = [$('.timer'), $('.t-left')];
 
 const tabId = Number(new URLSearchParams(location.search).get('tab'));
 let snap: Snapshot = { status: 'loading', source: 'none', participants: [] };
@@ -28,8 +31,54 @@ let winner: { id: string; name: string } | null = null;
 const drawn = new Set<string>();
 const excluded = new Set<string>(); // manually unchecked; remembered across sessions (chrome.storage.local)
 const saveExcluded = () => chrome.storage.local.set({ excluded: [...excluded] });
-chrome.storage.local.get('excluded').then((r) => {
+const secs = () => Math.min(86399, Math.max(5, hms.reduce((t, el) => t * 60 + (Math.round(Number(el.value)) || 0), 0)));
+const setSecs = (n: number) =>
+  [Math.floor(n / 3600), Math.floor(n / 60) % 60, n % 60].forEach((v, i) => (hms[i].value = String(v).padStart(2, '0')));
+const saveTimer = () => chrome.storage.local.set({ timer: { on: oTimer.checked, secs: secs() } });
+oTimer.onchange = saveTimer;
+for (const el of hms) {
+  el.onfocus = () => el.select();
+  el.onchange = () => {
+    setSecs(secs()); // normalize: carry overflow, clamp to >= 5 s, pad
+    saveTimer();
+  };
+}
+
+let timerId: number | undefined;
+let silence: (() => void) | undefined;
+function stopTimer() {
+  clearInterval(timerId);
+  silence?.(); // a new draw also cuts a ringing alarm
+  silence = undefined;
+  timerBox.hidden = true;
+}
+function startTimer(total: number) {
+  stopTimer();
+  const end = Date.now() + total * 1000;
+  let last = -1;
+  timerBox.hidden = false;
+  const step = () => {
+    const left = Math.max(0, Math.ceil((end - Date.now()) / 1000));
+    if (left === last) return;
+    last = left;
+    tLeft.textContent = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`;
+    timerBox.classList.toggle('low', left <= 5);
+    if (!oSnd.checked) return;
+    if (left > 0 && left <= 5) beep(1000, 30); // click
+    if (left === 0) {
+      silence = alarm();
+      clearInterval(timerId);
+    }
+  };
+  timerId = window.setInterval(step, 200);
+  step();
+}
+$('.t-stop').onclick = stopTimer;
+
+chrome.storage.local.get(['excluded', 'timer']).then((r) => {
   for (const k of r.excluded ?? []) excluded.add(k);
+  oTimer.checked = !!r.timer?.on;
+  setSecs(r.timer?.secs ?? 60);
   render();
 });
 const history: HistoryEntry[] = []; // in memory only, by design
@@ -112,6 +161,7 @@ go.onclick = async () => {
   const pool = eligible(snap.participants, drawn, excluded);
   if (busy || !pool.length) return;
   const chosen = pick(pool); // decided before any animation
+  stopTimer();
   busy = true;
   winner = null;
   stage.classList.remove('win');
@@ -126,6 +176,7 @@ go.onclick = async () => {
   drawn.add(chosen.key);
   history.unshift({ n: history.length + 1, name: chosen.name, time: new Date() });
   showWinner(chosen);
+  if (oTimer.checked) startTimer(secs());
   stage.classList.add('win');
   if (!prefersReducedMotion()) {
     confetti(document.body);
@@ -138,6 +189,7 @@ go.onclick = async () => {
 reset.onclick = () => {
   if (busy || !confirm('Resetar o sorteio? Todos voltam a poder ser sorteados e o resultado atual é apagado (desmarcados continuam fora).')) return;
   drawn.clear();
+  stopTimer();
   winner = null;
   stage.classList.remove('win');
   stage.textContent = 'Pronto para sortear';

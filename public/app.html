@@ -11,11 +11,18 @@
     <h1>🎲 Sorteio</h1>
     <p class="status" role="status"></p>
     <div class="stage" aria-live="polite">Pronto para sortear</div>
+    <p class="timer" hidden><span class="t-left"></span> <button class="link t-stop">parar</button></p>
     <p class="note" hidden></p>
     <button class="go">Sortear participante</button>
     <button class="reset link" title="Esquece quem já foi sorteado e limpa o resultado">Resetar sorteio</button>
     <fieldset>
       <label><input type="checkbox" class="o-snd"> Efeitos sonoros</label>
+      <div class="row">
+        <label><input type="checkbox" class="o-timer"> Timer após sortear</label>
+        <span class="hms" role="group" aria-label="Duração (horas, minutos, segundos)">
+          <input type="number" min="0" max="23" value="00" aria-label="Horas">:<input type="number" min="0" max="59" value="01" aria-label="Minutos">:<input type="number" min="0" max="59" value="00" aria-label="Segundos">
+        </span>
+      </div>
     </fieldset>
     <div><h3>Não sorteados <small>(desmarque para tirar do sorteio; fica lembrado nas próximas sessões)</small></h3><ul class="chips l-pool"></ul></div>
     <div><h3>Já sorteados</h3><ul class="chips l-done"></ul></div>

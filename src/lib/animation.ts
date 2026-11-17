@@ -86,3 +86,31 @@ export function beep(freq = 600, ms = 40): void {
     /* audio is optional */
   }
 }
+
+/** Digital-clock alarm: 4 groups of 3 fast square-wave beeps (~3 s), second tone alternating. */
+/** Returns a function that silences it early. */
+export function alarm(): () => void {
+  const oscs: OscillatorNode[] = [];
+  try {
+    ac ??= new AudioContext();
+    const t0 = ac.currentTime + 0.02;
+    for (let group = 0; group < 4; group++) {
+      for (let i = 0; i < 3; i++) {
+        const t = t0 + group * 0.8 + i * 0.16;
+        const o = ac.createOscillator();
+        const g = ac.createGain();
+        o.type = 'square';
+        o.frequency.value = i === 1 ? 1319 : 988;
+        g.gain.setValueAtTime(0.1, t);
+        g.gain.setValueAtTime(0, t + 0.11); // hard gate: clean staccato
+        o.connect(g).connect(ac.destination);
+        o.start(t);
+        o.stop(t + 0.12);
+        oscs.push(o);
+      }
+    }
+  } catch {
+    /* audio is optional */
+  }
+  return () => oscs.forEach((o) => { try { o.stop(); } catch { /* already stopped */ } });
+}
