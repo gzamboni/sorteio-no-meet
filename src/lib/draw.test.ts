@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { eligible, pick, randomIndex } from './draw';
 
-const P = (id: string, isSelf = false) => ({ id, name: id, isSelf, key: id });
+const P = (id: string, isSelf = false) => ({ id, name: id, isSelf, key: id, avatar: '' });
 const people = [P('a'), P('b', true), P('c')];
 
 describe('randomIndex', () => {
@@ -42,6 +42,6 @@ describe('eligible', () => {
     expect(eligible(people, new Set(['gone']))).toHaveLength(3);
   });
   it('matches by key, so a rejoin with a new id stays drawn', () => {
-    expect(eligible([{ id: 'new', name: 'a', isSelf: false, key: 'a' }], new Set(['a']))).toEqual([]);
+    expect(eligible([{ id: 'new', name: 'a', isSelf: false, key: 'a', avatar: '' }], new Set(['a']))).toEqual([]);
   });
 });

@@ -18,26 +18,34 @@ const tilesHtml = `
 
 beforeEach(() => (document.body.innerHTML = ''));
 
-it('key uses avatar URL without size suffix, so same-name people differ and rejoin matches', () => {
+it('key is the name (stable on rejoin, any avatar size); avatar upscaled', () => {
   const item = (id: string, img: string) =>
     `<div role="listitem" aria-label="Ana" data-participant-id="${id}"><img src="https://lh3.googleusercontent.com/${img}"></div>`;
-  document.body.innerHTML = `<div role="list" aria-label="Pessoas">${item('a', 'x=s50')}${item('b', 'y=s50')}</div>`;
-  const [a, b] = readParticipants(document).participants;
-  expect(a.key).toBe('Ana|https://lh3.googleusercontent.com/x');
-  expect(a.key).not.toBe(b.key);
-  document.body.innerHTML = `<div role="list" aria-label="Pessoas">${item('new', 'x=s320')}</div>`;
-  expect(readParticipants(document).participants[0].key).toBe(a.key);
+  document.body.innerHTML = `<div role="list" aria-label="Pessoas">${item('a', 'x=s50')}</div>`;
+  const [a] = readParticipants(document).participants;
+  document.body.innerHTML = `<div role="list" aria-label="Pessoas">${item('new', 'y=s320')}</div>`;
+  const [b] = readParticipants(document).participants;
+  expect(b.key).toBe(a.key);
+  expect(a.avatar).toBe('https://lh3.googleusercontent.com/x=s256-c');
+});
+
+it('presenting: same name listed twice collapses to one', () => {
+  document.body.innerHTML = `<div role="list" aria-label="Pessoas">
+    <div role="listitem" aria-label="Bruno (Você)" data-participant-id="s1"></div>
+    <div role="listitem" aria-label="Bruno" data-participant-id="s2"></div>
+    <div role="listitem" aria-label="Ana" data-participant-id="a2"></div>
+    <div role="listitem" aria-label="Ana" data-participant-id="a"></div></div>`;
+  expect(readParticipants(document).participants.map((p) => p.id)).toEqual(['s1', 'a2']);
 });
 
 describe('readParticipants', () => {
-  it('reads panel, strips self suffix, dedupes by id, keeps same-name distinct ids, ignores other lists', () => {
+  it('reads panel, strips self suffix, dedupes by name, ignores other lists', () => {
     document.body.innerHTML = panelHtml;
     const r = readParticipants(document);
     expect(r.source).toBe('panel');
     expect(r.participants).toEqual([
-      { id: 'p1', name: 'Ana Souza', isSelf: false, key: 'Ana Souza|' },
-      { id: 'p2', name: 'Bruno', isSelf: true, key: 'Bruno|' },
-      { id: 'p3', name: 'Ana Souza', isSelf: false, key: 'Ana Souza|' },
+      { id: 'p1', name: 'Ana Souza', isSelf: false, key: 'Ana Souza', avatar: '' },
+      { id: 'p2', name: 'Bruno', isSelf: true, key: 'Bruno', avatar: '' },
     ]);
   });
   it('falls back to tiles, skipping icon text and nameless tiles', () => {
@@ -45,8 +53,8 @@ describe('readParticipants', () => {
     const r = readParticipants(document);
     expect(r.source).toBe('tiles');
     expect(r.participants).toEqual([
-      { id: 't1', name: 'Carla', isSelf: false, key: 'Carla|' },
-      { id: 't2', name: 'Dani', isSelf: true, key: 'Dani|' },
+      { id: 't1', name: 'Carla', isSelf: false, key: 'Carla', avatar: '' },
+      { id: 't2', name: 'Dani', isSelf: true, key: 'Dani', avatar: '' },
     ]);
   });
   it('returns none on unknown structure', () => {

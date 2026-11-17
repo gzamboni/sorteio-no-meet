@@ -31,7 +31,7 @@ Estrutura: `src/background.ts` (ícone → abre janela) · `src/app/` (UI da jan
 | Item | Motivo |
 |---|---|
 | content script em `https://meet.google.com/*` | ler os participantes da página |
-| `permissions: []` | a janela fala com a aba via `tabs.sendMessage`; não precisa de `tabs`/`activeTab` |
+| `permissions: ["storage"]` | lembra quem foi desmarcado entre sessões (`storage.local`); a janela fala com a aba via `tabs.sendMessage`, sem `tabs`/`activeTab` |
 | service worker | só abre/foca a janela ao clicar no ícone; sem estado, pode ser suspenso |
 
 ## Como a identificação de participantes funciona

@@ -1,5 +1,5 @@
-/** key: stable across rejoin (Meet reissues `id`): name + avatar URL without its size suffix. */
-export type Participant = { id: string; name: string; isSelf: boolean; key: string };
+/** key: stable across rejoin (Meet reissues `id`) and across sessions: the name. avatar: photo URL or ''. */
+export type Participant = { id: string; name: string; isSelf: boolean; key: string; avatar: string };
 export type Source = 'panel' | 'tiles' | 'none';
 export type Status = 'not-meeting' | 'lobby' | 'loading' | 'unreadable' | 'ready';
 export type Snapshot = { status: Status; source: Source; participants: Participant[] };
@@ -19,13 +19,15 @@ function leafText(el: Element): string {
   return '';
 }
 
-const avatarOf = (el: Element) => el.querySelector('img[src*="googleusercontent"]')?.getAttribute('src')?.split('=')[0] ?? '';
+// larger size for the winner photo; Meet's own size suffix (=s48-c-mo) is replaced
+const avatarOf = (el: Element) =>
+  el.querySelector('img[src*="googleusercontent"]')?.getAttribute('src')?.replace(/=[^=/]*$/, '=s256-c') ?? '';
 
 function make(rawName: string, id: string | null, isSelfHint: boolean, el: Element): Participant | null {
   const isSelf = isSelfHint || SELF_SUFFIX.test(rawName);
   const name = rawName.replace(SELF_SUFFIX, '').trim();
   if (!name) return null;
-  return { id: id || `n:${name}`, name, isSelf, key: name + '|' + avatarOf(el) };
+  return { id: id || `n:${name}`, name, isSelf, key: name, avatar: avatarOf(el) };
 }
 
 function fromPanel(root: ParentNode): Participant[] {
@@ -55,9 +57,10 @@ function fromTiles(root: ParentNode): Participant[] {
   return out;
 }
 
+/** One entry per name (= key): while presenting, Meet lists self twice with different ids and no "(você)" on either. Prefer the self entry. */
 function dedupe(ps: Participant[]): Participant[] {
   const m = new Map<string, Participant>();
-  for (const p of ps) if (!m.has(p.id)) m.set(p.id, p);
+  for (const p of ps) if (!m.has(p.key) || (p.isSelf && !m.get(p.key)!.isSelf)) m.set(p.key, p);
   return [...m.values()];
 }
 

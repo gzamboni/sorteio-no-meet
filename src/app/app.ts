@@ -26,7 +26,12 @@ let listsKey = '';
 let winner: { id: string; name: string } | null = null;
 // keyed by Participant.key: Meet gives a rejoining person a new id
 const drawn = new Set<string>();
-const excluded = new Set<string>(); // manually unchecked in the list
+const excluded = new Set<string>(); // manually unchecked; remembered across sessions (chrome.storage.local)
+const saveExcluded = () => chrome.storage.local.set({ excluded: [...excluded] });
+chrome.storage.local.get('excluded').then((r) => {
+  for (const k of r.excluded ?? []) excluded.add(k);
+  render();
+});
 const history: HistoryEntry[] = []; // in memory only, by design
 
 function render() {
@@ -67,6 +72,7 @@ function render() {
             cb.onchange = () => {
               if (cb.checked) excluded.delete(p.key);
               else excluded.add(p.key);
+              saveExcluded();
               render();
             };
             label.append(cb, p.name + (p.isSelf ? ' (você)' : ''));
@@ -91,6 +97,17 @@ function render() {
   );
 }
 
+function showWinner(p: Participant) {
+  const face = document.createElement(p.avatar ? 'img' : 'div');
+  face.className = 'photo';
+  if (face instanceof HTMLImageElement) face.src = p.avatar;
+  else face.textContent = p.name[0]?.toUpperCase() ?? '?';
+  const name = document.createElement('span');
+  name.className = 'tick';
+  name.textContent = p.name;
+  stage.replaceChildren(face, name);
+}
+
 go.onclick = async () => {
   const pool = eligible(snap.participants, drawn, excluded);
   if (busy || !pool.length) return;
@@ -108,6 +125,7 @@ go.onclick = async () => {
   winner = chosen;
   drawn.add(chosen.key);
   history.unshift({ n: history.length + 1, name: chosen.name, time: new Date() });
+  showWinner(chosen);
   stage.classList.add('win');
   if (!prefersReducedMotion()) {
     confetti(document.body);
@@ -118,7 +136,7 @@ go.onclick = async () => {
 
 // keeps history; "limpar" handles that
 reset.onclick = () => {
-  if (busy) return;
+  if (busy || !confirm('Resetar o sorteio? Todos voltam a poder ser sorteados e o resultado atual é apagado (desmarcados continuam fora).')) return;
   drawn.clear();
   winner = null;
   stage.classList.remove('win');
